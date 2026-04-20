@@ -9,6 +9,23 @@
             <span>基本信息</span>
           </template>
           
+          <div class="avatar-section">
+            <el-avatar :size="100" :src="getAvatarUrl(form.avatar)" />
+            <el-upload
+              ref="uploadRef"
+              :show-file-list="false"
+              :before-upload="beforeUpload"
+              :http-request="customUpload"
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+              class="avatar-uploader"
+            >
+              <el-button type="primary" size="small" style="margin-left: 20px;">
+                更换头像
+              </el-button>
+            </el-upload>
+            <div class="avatar-tip">支持 jpg、png、gif 格式，大小不超过 5MB</div>
+          </div>
+
           <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
             <el-form-item label="用户名">
               <el-input v-model="form.username" disabled />
@@ -70,19 +87,22 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
-import { getUserInfo, updateProfile, resetPassword } from '@/api/auth'
+import { getUserInfo, updateProfile, resetPassword, uploadAvatar } from '@/api/auth'
 
 const userStore = useUserStore()
 const formRef = ref(null)
 const passwordFormRef = ref(null)
+const uploadRef = ref(null)
 const updateLoading = ref(false)
 const passwordLoading = ref(false)
+const uploadLoading = ref(false)
 
 const form = reactive({
   username: '',
   nickname: '',
   phone: '',
-  email: ''
+  email: '',
+  avatar: ''
 })
 
 const passwordForm = reactive({
@@ -90,6 +110,16 @@ const passwordForm = reactive({
   newPassword: '',
   confirmPassword: ''
 })
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) {
+    return ''
+  }
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  return '/api' + avatar
+}
 
 const rules = {
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
@@ -121,6 +151,44 @@ const passwordRules = {
   ]
 }
 
+const beforeUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
+
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件！')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB！')
+    return false
+  }
+  return true
+}
+
+const customUpload = async (options) => {
+  const { file } = options
+  uploadLoading.value = true
+
+  try {
+    const res = await uploadAvatar(file)
+    if (res.code === 200) {
+      ElMessage.success('头像上传成功')
+      form.avatar = res.data.url
+      await loadUserInfo()
+      userStore.setUserInfo({
+        ...userStore.userInfo,
+        avatar: res.data.url
+      })
+    }
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('上传失败，请重试')
+  } finally {
+    uploadLoading.value = false
+  }
+}
+
 const loadUserInfo = async () => {
   try {
     const res = await getUserInfo()
@@ -129,7 +197,8 @@ const loadUserInfo = async () => {
       username: data.username,
       nickname: data.nickname,
       phone: data.phone,
-      email: data.email
+      email: data.email,
+      avatar: data.avatar
     })
   } catch (error) {
     console.error(error)
@@ -184,5 +253,24 @@ onMounted(() => {
 .page-title {
   margin-bottom: 20px;
   color: #303133;
+}
+
+.avatar-section {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+}
+
+.avatar-uploader {
+  display: inline-block;
+}
+
+.avatar-tip {
+  margin-left: 20px;
+  font-size: 12px;
+  color: #909399;
 }
 </style>

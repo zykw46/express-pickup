@@ -42,7 +42,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 100MB
+      max-request-size: 10MB
   data:
     redis:
       host: localhost
@@ -112,3 +112,7 @@ express:
   order:
     base-price: 2.00
     delivery-rate: 0.70
+
+upload:
+  path: ./uploads
+  max-size: 5242880

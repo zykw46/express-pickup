@@ -18,7 +18,7 @@
       <div class="header-right">
         <el-dropdown @command="handleCommand">
           <span class="user-info">
-            <el-avatar :size="32" :src="userStore.userInfo?.avatar">
+            <el-avatar :size="40" :src="getAvatarUrl(userStore.userInfo?.avatar)">
               <el-icon><UserFilled /></el-icon>
             </el-avatar>
             <span class="username">{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</span>
@@ -62,6 +62,16 @@ const menuItems = computed(() => {
     title: r.meta.title
   }))
 })
+
+const getAvatarUrl = (avatar) => {
+  if (!avatar) {
+    return ''
+  }
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  return '/api' + avatar
+}
 
 const handleCommand = async (command) => {
   if (command === 'logout') {

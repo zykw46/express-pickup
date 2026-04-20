@@ -21,8 +21,18 @@ export const updateProfile = (data) => {
 }
 
 export const resetPassword = (oldPassword, newPassword) => {
-  return request.put('/auth/password', null, {
+  return request.post('/auth/reset-password', null, {
     params: { oldPassword, newPassword }
+  })
+}
+
+export const uploadAvatar = (file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request.post('/upload/avatar', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }
 
